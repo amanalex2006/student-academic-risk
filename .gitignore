@@ -10,3 +10,6 @@ __pycache__/
 artifacts/
 .playwright-cli/
 output/playwright/
+models/*.joblib
+models/manifest.json
+models/*.tmp

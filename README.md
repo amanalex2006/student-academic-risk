@@ -1,10 +1,46 @@
 # Student Academic Risk Prediction
 
-A self-contained Jupyter notebook using **scikit-learn on CPU** to estimate failure
+A Jupyter notebook and local website using **scikit-learn on CPU** to estimate failure
 and passing probabilities from academic and behavioral inputs. It supports mathematics
 and Portuguese with separate models, each with or without previous-period grades.
-The interactive form highlights the most likely outcome and the strongest individual
-SHAP contribution to failure probability.
+The interactive forms highlight the most likely outcome and the strongest individual
+SHAP contribution to failure probability. The website's model library shows four
+saved pipelines and their measured evaluation results.
+
+## Run the local website
+
+The project environment and four trained models are already prepared on this computer.
+From the project folder:
+
+```powershell
+.\.venv\Scripts\python.exe app.py
+```
+
+Open **http://127.0.0.1:8000** for the student form, or **http://127.0.0.1:8000/models**
+for the model library. Use **Try a sample** to fill an illustrative profile, then
+**Estimate performance**. Subject and input-mode selectors choose the matching saved
+model. Student submissions are not saved, and the website does not retrain on requests.
+
+For a new checkout, create the environment below, install dependencies, and export
+the models once before starting the website:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\train_models.py
+```
+
+This executes the notebook's original training, evaluation, and verification workflow,
+then saves its selected models. You can instead run the notebook through section 10,
+**Save models for the website**. Restart the website after re-exporting.
+
+Actual fitted models are stored in `models/*.joblib`, with `models/manifest.json`
+recording evaluation metrics, training dates, package versions, and SHA-256 checksums.
+The four files include the training-only backgrounds needed for SHAP explanations.
+Generated model artifacts stay local and are ignored by Git; see `models/README.md`.
+The registry verifies dependency compatibility and checksums before loading models.
+Only load trusted project-generated joblib artifacts; model uploads are not supported.
+
+The server uses Waitress, binds to this computer's loopback interface, and works on
+Windows. Use `python app.py --port 8001` if port 8000 is already occupied.
 
 ## Setup and run
 
@@ -40,6 +76,9 @@ and a live kernel. After restarting the kernel, rerun the notebook before predic
   executable verification, and limitations.
 - `requirements.txt`: pinned direct dependencies used for verification.
 - `scripts/verify_notebook.py`: fresh-kernel execution and output checks.
+- `app.py`, `risk_app/`, `web/`: local Python inference API and responsive website.
+- `models/`: fitted model storage; binaries and manifest are generated locally.
+- `tests/test_website.py`: saved-model and website integration checks.
 - `dataset/`: the supplied CSV files and original codebook/merge reference.
 - `Student_Performance_Analysis_using_Machine_Learnin.pdf`: unchanged reference paper.
 
@@ -104,6 +143,7 @@ students appear in both subjects; subjects are trained and evaluated separately.
 ```powershell
 .\.venv\Scripts\python.exe -m pip check
 .\.venv\Scripts\python.exe scripts\verify_notebook.py
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
 The verification script starts a fresh kernel using its own interpreter, executes
@@ -111,7 +151,14 @@ every cell, and checks for successful verification output. It writes an executed
 copy under ignored `artifacts/`. Use `--save` to update the main notebook's outputs
 after a successful run. It tests all subject/mode combinations, invalid inputs,
 class ordering, split isolation, explanation additivity and repeatability, and the
-same callbacks used by the form. The saved notebook includes charts and result tables.
+same callbacks used by the form. The model export section also checks reloaded
+website probabilities and SHAP explanations against the notebook. The website tests
+exercise all four saved models without allowing training, input errors, missing and
+corrupt artifacts, and dependency mismatches. The saved notebook includes charts
+and result tables.
+
+See [website verification evidence](docs/website-verification.md) for browser and
+saved-model integration results.
 
 Measured held-out results from the documented seed-42 split:
 

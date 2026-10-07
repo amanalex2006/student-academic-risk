@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Estimate student academic risk with saved models and explore their measured performance.">
+  <title>{{ 'Model library' if page == 'models' else 'Student assessment' }} · StudyLens</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body data-page="{{ page }}">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="StudyLens home"><span class="brand-mark" aria-hidden="true">S<span></span></span>StudyLens<span class="brand-dot">.</span></a>
+    <div class="workspace-label">ACADEMIC ANALYTICS</div>
+    <nav aria-label="Main navigation">
+      <a href="/" class="nav-link {{ 'active' if page == 'assessment' else '' }}" {{ 'aria-current=page' if page == 'assessment' else '' }}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M8 15v-4m5 4V7m5 8v-6"/></svg>Student assessment
+      </a>
+      <a href="/models" class="nav-link {{ 'active' if page == 'models' else '' }}" {{ 'aria-current=page' if page == 'models' else '' }}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></svg>Model library<span class="nav-count" id="nav-count">—</span>
+      </a>
+    </nav>
+    <div class="sidebar-bottom"><span class="local-dot"></span><span>Local workspace<small>Saved on your computer</small></span></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><span>Workspace <span class="breadcrumb">/</span> {{ 'Model library' if page == 'models' else 'Student assessment' }}</span><div class="status-pill" id="model-status"><span></span>Checking models</div></header>
+    <main id="main">
+      <div class="page-heading"><div><p class="eyebrow">{{ 'YOUR TRAINED MODELS' if page == 'models' else 'STUDENT PERFORMANCE' }}</p><h1>{{ 'Model library' if page == 'models' else 'Student risk assessment' }}</h1><p class="page-description">{{ 'Four course models, their saved files, and the evidence behind each prediction.' if page == 'models' else 'Enter a student profile to estimate the likelihood of passing or failing a course.' }}</p></div><span class="heading-note">{{ 'models/' if page == 'models' else 'Grades are out of 20' }}</span></div>
+      <div id="global-error" class="notice error" role="alert" hidden></div>
+      {% if page == 'assessment' %}
+      <div class="assessment-grid">
+        <section class="panel input-panel" aria-labelledby="profile-heading">
+          <div class="panel-heading"><div><span class="step-number">01</span><h2 id="profile-heading">Student profile</h2></div><button type="button" class="text-button" id="sample-button">Try a sample</button></div>
+          <form id="student-form">
+            <fieldset><legend>Course &amp; academic history</legend><div class="field-grid">
+              <label>Subject<select name="subject" id="subject"><option value="math">Mathematics</option><option value="portuguese">Portuguese</option></select></label>
+              <label>Prediction mode<select name="mode" id="mode"><option value="without_grades">Without previous grades</option><option value="with_grades">With G1 and G2</option></select></label>
+              <label>Past class failures<select name="failures" required><option value="">Select a count</option><option value="0">0 — no past failures</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+              <label>School absences<input name="absences" type="number" min="0" max="93" step="1" placeholder="e.g. 6" required><span class="field-hint">Number of absences recorded</span></label>
+              <label class="grade-field" hidden>First-period grade (G1)<input name="G1" type="number" min="0" max="20" step="1" placeholder="0–20" disabled></label>
+              <label class="grade-field" hidden>Second-period grade (G2)<input name="G2" type="number" min="0" max="20" step="1" placeholder="0–20" disabled></label>
+            </div></fieldset>
+            <fieldset><legend>Study habits &amp; support</legend><div class="field-grid">
+              <label>Weekly study time<select name="studytime" required><option value="">Select study time</option><option value="1">Less than 2 hours</option><option value="2">2–5 hours</option><option value="3">5–10 hours</option><option value="4">More than 10 hours</option></select></label>
+              <label>Travel time to school<select name="traveltime" required><option value="">Select travel time</option><option value="1">Less than 15 minutes</option><option value="2">15–30 minutes</option><option value="3">30–60 minutes</option><option value="4">More than 60 minutes</option></select></label>
+              <label>Extra school support<select name="schoolsup" required><option value="">Select an answer</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+              <label>Family educational support<select name="famsup" required><option value="">Select an answer</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+              <label>Extracurricular activities<select name="activities" required><option value="">Select an answer</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+              <label>Plans higher education<select name="higher" required><option value="">Select an answer</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+              <label>Internet access at home<select name="internet" required><option value="">Select an answer</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+            </div></fieldset>
+            <div class="form-error notice error" id="form-error" role="alert" hidden></div>
+            <div class="form-actions"><button type="submit" id="predict-button" class="primary-button">Estimate performance <span aria-hidden="true">↗</span></button><button type="reset" class="secondary-button">Reset</button></div>
+            <p class="privacy-note">The app does not save student submissions.</p>
+          </form>
+        </section>
+        <div class="result-column">
+          <section class="panel result-panel" aria-labelledby="result-heading" aria-live="polite" aria-atomic="false">
+            <div class="panel-heading"><div><span class="step-number">02</span><h2 id="result-heading">Performance estimate</h2></div><span class="result-tag" id="result-tag">Awaiting profile</span></div>
+            <div id="empty-result" class="empty-result"><div class="empty-graphic" aria-hidden="true"><span></span><span></span><span></span><i></i></div><h3>A profile turns into a clearer picture.</h3><p>Complete the form to see course likelihoods and the inputs that contribute most.</p><div class="empty-legend"><span><i class="pass-dot"></i>Pass likelihood</span><span><i class="fail-dot"></i>Fail likelihood</span></div></div>
+            <div id="loading-result" class="loading-result" hidden><span class="spinner" aria-hidden="true"></span><h3>Calculating your estimate</h3><p>Finding the most influential factors. The first estimate may take a little longer.</p></div>
+            <div id="prediction-result" hidden>
+              <div class="outcome-heading"><p class="eyebrow">MOST LIKELY OUTCOME</p><h3 id="outcome"></h3><p id="outcome-context"></p></div>
+              <div class="likelihoods"><div class="likelihood pass"><div><span>Pass</span><strong id="pass-probability"></strong></div><div class="probability-track"><span id="pass-bar"></span></div></div><div class="likelihood fail"><div><span>Fail / at risk</span><strong id="fail-probability"></strong></div><div class="probability-track"><span id="fail-bar"></span></div></div></div>
+              <div class="prominent-factor"><span class="factor-icon" aria-hidden="true">✦</span><div><p class="eyebrow">STRONGEST CONTRIBUTING FACTOR</p><h4 id="factor-name"></h4><p id="factor-description"></p></div></div>
+              <div class="contributions"><div class="section-label"><h4>What shapes this estimate</h4><span>Contribution to failure risk</span></div><div id="factor-bars"></div><div class="factor-legend"><span><i class="pass-dot"></i>Lowers risk</span><span><i class="fail-dot"></i>Raises risk</span><span>Values in percentage points</span></div></div>
+              <div id="prediction-notes" class="prediction-notes" hidden></div>
+              <p class="explanation-note" id="explanation-note"></p>
+            </div>
+          </section>
+          <section class="model-context" aria-labelledby="context-heading"><div class="section-label"><h3 id="context-heading">Behind the estimate</h3><a href="/models">View model library ↗</a></div><p id="selected-model-name">Checking saved models…</p><div class="context-metrics"><div><strong id="context-recall">—</strong><span>Failure recall</span></div><div><strong id="context-auc">—</strong><span>ROC-AUC</span></div><div><strong id="context-records">—</strong><span>Test records</span></div></div><p class="model-limit" id="context-limit">Measured on held-out course records.</p></section>
+        </div>
+      </div>
+      <div class="interpretation-note"><span aria-hidden="true">i</span><p>These are estimates from historical school data. Input contributions explain the model’s prediction, not causes. Failure means a final grade below 10/20; the displayed outcome uses a 50% threshold.</p></div>
+      {% else %}
+      <section class="storage-banner"><div class="storage-icon" aria-hidden="true">▤</div><div><h2>Saved once. Ready for prediction.</h2><p>Each model stores its fitted pipeline and the background records used to explain predictions.</p></div><span class="storage-location">LOCAL STORAGE <strong>models/</strong></span></section>
+      <div id="model-grid" class="model-grid" aria-live="polite"><p>Loading saved models…</p></div>
+      <section class="library-note"><h2>Reading the results</h2><p>Failure recall is the fraction of failing students identified at the 50% threshold. Log loss and Brier score measure probability quality; lower is better. Subjects are evaluated separately, using the same held-out records for both input modes.</p><p>Without previous grades, failure recall is low at this threshold. These historical datasets do not establish a prospective early-warning system.</p></section>
+      {% endif %}
+      <footer><span>StudyLens · Student academic analytics</span><span>Mathematics &amp; Portuguese · UCI Student Performance</span></footer>
+    </main>
+  </div>
+</body>
+</html>
